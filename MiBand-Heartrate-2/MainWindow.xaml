@@ -49,6 +49,18 @@
                         </Style>
                     </Button.Style>
                 </Button>
+                <Button Content="Auto-Connect" Padding="10 5" Margin="5 5 0 5" Command="{Binding Command_AutoConnect}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
             </StackPanel>
         </Grid>
 

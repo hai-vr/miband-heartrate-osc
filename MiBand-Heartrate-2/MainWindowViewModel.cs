@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows.Data;
 using System.Windows.Input;
-
+using Windows.Devices.Enumeration;
+using MiBand_Heartrate_2.Devices;
 using MiBand_Heartrate_2.Extras;
 
 namespace MiBand_Heartrate_2
@@ -204,6 +207,54 @@ namespace MiBand_Heartrate_2
         }
 
         // --------------------------------------
+
+        ICommand _command_autoconnect;
+
+        public ICommand Command_AutoConnect
+        {
+            get
+            {
+                if (_command_autoconnect == null)
+                {
+                    _command_autoconnect = new RelayCommand<object>("connect", "Connect to a device", o =>
+                    {
+                        ObservableCollection<DeviceInformation> devices = new ObservableCollection<DeviceInformation>();
+                        BindingOperations.EnableCollectionSynchronization(devices, new object());
+
+                        var bluetooth = new BLE(new[] {"System.Devices.Aep.DeviceAddress", "System.Devices.Aep.IsConnected"});
+
+                        void OnBluetoothAdded(DeviceWatcher sender, DeviceInformation args)
+                        {
+                            // Jury-rigged: Accept only my band model name
+                            if (args.Name != "Mi Smart Band 5") return;
+
+                            // Jury-rigged: Hard-code my auth key
+                            var device = new MiBand4_Device(args, "YOUR_AUTH_KEY_GOES_HERE");
+                            device.Connect();
+
+                            Device = device;
+
+                            if (bluetooth.Watcher != null)
+                            {
+                                bluetooth.Watcher.Added -= OnBluetoothAdded;
+                            }
+
+                            bluetooth.StopWatcher();
+                        }
+
+                        bluetooth.Watcher.Added += OnBluetoothAdded;
+
+                        bluetooth.StartWatcher();
+
+                    }, o =>
+                    {
+                        return Device == null || Device.Status == Devices.DeviceStatus.OFFLINE;
+                    });
+                }
+
+                return _command_autoconnect;
+            }
+        }
 
         ICommand _command_connect;
 
